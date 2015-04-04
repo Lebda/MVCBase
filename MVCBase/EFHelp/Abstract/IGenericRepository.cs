@@ -10,5 +10,6 @@ namespace EFHelp.Abstract
         void Update(T obj);
         void Delete(object id);
         void Save();
+        void Dispose();
     }
 }

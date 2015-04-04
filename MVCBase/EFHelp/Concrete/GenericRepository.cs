@@ -8,45 +8,48 @@ namespace EFHelp.Concrete
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private DbContext db = null;
-        private DbSet<T> table = null;
-
         public GenericRepository(DbContext db)
         {
-            this.db = db;
-            table = db.Set<T>();
+            this.m_db = db;
+            m_table = db.Set<T>();
         }
 
+        #region MEMBERS
+        private readonly DbContext m_db;
+        private readonly DbSet<T> m_table;
+        #endregion
+
+        #region INTERFACE
         public IEnumerable<T> SelectAll()
         {
-            return table.ToList();
+            return m_table.ToList();
         }
-
         public T SelectByID(object id)
         {
-            return table.Find(id);
+            return m_table.Find(id);
         }
-
         public void Insert(T obj)
         {
-            table.Add(obj);
+            m_table.Add(obj);
         }
-
         public void Update(T obj)
         {
-            table.Attach(obj);
-            db.Entry(obj).State = EntityState.Modified;
+            m_table.Attach(obj);
+            m_db.Entry(obj).State = EntityState.Modified;
         }
-
         public void Delete(object id)
         {
-            T existing = table.Find(id);
-            table.Remove(existing);
+            T existing = m_table.Find(id);
+            m_table.Remove(existing);
         }
-
         public void Save()
         {
-            db.SaveChanges();
+            m_db.SaveChanges();
         }
+        public void Dispose()
+        {
+            m_db.Dispose();
+        }
+        #endregion
     }
 }
