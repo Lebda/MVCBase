@@ -1,0 +1,10 @@
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EFHelp.dll.config
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EFHelp.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EFHelp.pdb
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EntityFramework.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EntityFramework.SqlServer.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EntityFramework.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EntityFramework.SqlServer.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\obj\Debug\EFHelp.csprojResolveAssemblyReference.cache
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\obj\Debug\EFHelp.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\obj\Debug\EFHelp.pdb
