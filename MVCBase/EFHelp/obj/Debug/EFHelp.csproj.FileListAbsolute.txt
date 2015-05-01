@@ -7,3 +7,13 @@ C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\EntityFramework.SqlServer.xml
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\obj\Debug\EFHelp.dll
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\obj\Debug\EFHelp.pdb
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.Mvc.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.Razor.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.Razor.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.Deployment.dll
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.Mvc.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.Razor.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.Razor.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.Deployment.xml

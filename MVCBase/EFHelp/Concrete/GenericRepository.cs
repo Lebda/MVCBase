@@ -6,43 +6,54 @@ using EFHelp.Abstract;
 
 namespace EFHelp.Concrete
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T : class
+    public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class
     {
         public GenericRepository(DbContext db)
         {
             this.m_db = db;
-            m_table = db.Set<T>();
+            m_table = db.Set<TEntity>();
         }
 
         #region MEMBERS
         private readonly DbContext m_db;
-        private readonly DbSet<T> m_table;
+        private readonly DbSet<TEntity> m_table;
         #endregion
 
         #region INTERFACE
-        public IEnumerable<T> SelectAll()
+        public IEnumerable<TEntity> DataSet()
+        {
+            return m_table;
+        }
+        public IEnumerable<TEntity> SelectAll()
         {
             return m_table.ToList();
         }
-        public T SelectByID(object id)
+        public TEntity SelectByID(object id)
         {
             return m_table.Find(id);
         }
-        public void Insert(T obj)
+        public void Insert(TEntity obj)
         {
             m_table.Add(obj);
         }
-        public void Update(T obj)
+        public void Insert4ID(TEntity obj, Func<TEntity, int> getter, Action<TEntity, int> setter)
+        {
+            var items = SelectAll();
+            int maxID = items.Max(item => getter(item));
+            setter(obj, maxID + 1);
+            Insert(obj);
+        }
+        public void Update(TEntity obj)
         {
             m_table.Attach(obj);
             m_db.Entry(obj).State = EntityState.Modified;
         }
         public void Delete(object id)
         {
-            T existing = m_table.Find(id);
+            TEntity existing = m_table.Find(id);
             m_table.Remove(existing);
         }
-        public void Save()
+        public void SaveChanges()
         {
             m_db.SaveChanges();
         }
