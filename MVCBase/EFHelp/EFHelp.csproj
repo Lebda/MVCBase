@@ -39,6 +39,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Web.Mvc, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\SciaSquash\SciaSquash\SciaSquash.Web\bin\System.Web.Mvc.dll</HintPath>
@@ -50,10 +51,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Abstract\IControllerHelper.cs" />
-    <Compile Include="Concrete\ControllerHelper.cs" />
+    <Compile Include="Concrete\ControllerHelp\Conroller4ImageHolder.cs" />
+    <Compile Include="Concrete\ControllerHelp\ConrollerBase.cs" />
     <Compile Include="Concrete\GenericRepository.cs" />
     <Compile Include="Abstract\IGenericRepository.cs" />
+    <Compile Include="Abstract\ImageHolder.cs" />
+    <Compile Include="Extensions\HttpPostedFileBaseExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
