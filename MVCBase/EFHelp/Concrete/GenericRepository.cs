@@ -20,7 +20,11 @@ namespace EFHelp.Concrete
         #endregion
 
         #region INTERFACE
-        public IEnumerable<TEntity> DataSet()
+        public IEnumerable<TEntity> DataEnumerable()
+        {
+            return m_table;
+        }
+        public IQueryable<TEntity> DataQueryable()
         {
             return m_table;
         }

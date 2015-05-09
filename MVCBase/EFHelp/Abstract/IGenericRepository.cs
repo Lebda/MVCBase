@@ -6,7 +6,8 @@ namespace EFHelp.Abstract
 {
     public interface IGenericRepository<TEntity> where TEntity : class
     {
-        IEnumerable<TEntity> DataSet();
+        IQueryable<TEntity> DataQueryable();
+        IEnumerable<TEntity> DataEnumerable();
         IEnumerable<TEntity> SelectAll();
         TEntity SelectByID(object id);
         void Insert4ID(TEntity obj, Func<TEntity, int> getter, Action<TEntity, int> setter);

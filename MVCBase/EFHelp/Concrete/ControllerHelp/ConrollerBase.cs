@@ -52,7 +52,7 @@ namespace EFHelp.Concrete.ControllerHelp
         }
         void SafeCall(Action<T> job, T item)
         {
-            if (job == null)
+            if (job == null || item == null)
             {
                 return;
             }
@@ -62,7 +62,7 @@ namespace EFHelp.Concrete.ControllerHelp
 
         #region EDIT CRUD
         // GET: ControllerName/Edit/5
-        protected ActionResult EditBase(int? id)
+        protected ActionResult EditBase(int? id, Action<T> callBack = null)
         {
             if (id == null)
             {
@@ -73,6 +73,7 @@ namespace EFHelp.Concrete.ControllerHelp
             {
                 return HttpNotFound();
             }
+            SafeCall(callBack, item);
             return View(item);
         }
         // POST: ControllerName/Edit/5
@@ -80,7 +81,7 @@ namespace EFHelp.Concrete.ControllerHelp
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost, ActionName("Edit")]
         [ValidateAntiForgeryToken]
-        protected ActionResult EditPostBase(int? id, Func<RedirectToRouteResult> redirection = null, Action<T> imageUpdate = null, params string[] properties2Update)
+        protected ActionResult EditPostBase(int? id, Action<T> callBack = null, Func<RedirectToRouteResult> redirection = null, Action<T> imageUpdate = null, params string[] properties2Update)
         {
             if (id == null)
             {
@@ -101,6 +102,7 @@ namespace EFHelp.Concrete.ControllerHelp
                     ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
                 }
             }
+            SafeCall(callBack, item2Update);
             return View(item2Update);
         }
         #endregion
@@ -117,7 +119,7 @@ namespace EFHelp.Concrete.ControllerHelp
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        protected ActionResult CreateBase(T item, Action<object> callBack, object selectedID = null, Func<RedirectToRouteResult> redirection = null)
+        protected ActionResult CreateBase(T item, Action<T> callBack = null, Func<RedirectToRouteResult> redirection = null)
         {
             try
             {
@@ -128,25 +130,51 @@ namespace EFHelp.Concrete.ControllerHelp
                     return RedirectionInternal(redirection);
                 }
             }
-            catch (DataException dex)
+            catch (DataException)
             {
                 //Log the error (uncomment dex variable name and add a line here to write a log.
                 ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
             }
-            if (callBack != null)
-            {
-                callBack(selectedID);
-            }
+            SafeCall(callBack, item);
             return View(item);
         }
         #endregion
-     
+
+        #region DELETE CRUD
+        // GET: ControllerName/Delete/5
+        public ActionResult DeleteBase(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var item = m_repo.SelectByID(id);
+            if (item == null)
+            {
+                return HttpNotFound();
+            }
+            return View(item);
+        }
+        // POST: ControllerName/Delete/5
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmedBase(int id, Func<RedirectToRouteResult> redirection = null)
+        {
+            m_repo.Delete(id);
+            m_repo.SaveChanges();
+            return RedirectionInternal(redirection);
+        }
+        #endregion
+
+        #region INDEX
         // GET: ControllerName
         protected ActionResult IndexBase()
         {
             var test = m_repo.SelectAll();
             return View(test);
         }
+        #endregion
+
+        #region DETAILS
         // GET: ControllerName/Details/5
         protected ActionResult DetailsBase(int? id)
         {
@@ -161,5 +189,6 @@ namespace EFHelp.Concrete.ControllerHelp
             }
             return View(item);
         }
+        #endregion
     }
 }
