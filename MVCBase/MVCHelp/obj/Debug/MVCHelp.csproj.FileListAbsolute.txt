@@ -2,4 +2,3 @@ C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\MVCHelp
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\MVCHelp\bin\Debug\MVCHelp.pdb
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\MVCHelp\obj\Debug\MVCHelp.dll
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\MVCHelp\obj\Debug\MVCHelp.pdb
-C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\MVCHelp\obj\Debug\MVCHelp.csprojResolveAssemblyReference.cache

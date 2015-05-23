@@ -85,10 +85,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\RolesAdminControllerBase.cs" />
+    <Compile Include="Controllers\UsersAdminControllerBase.cs" />
+    <Compile Include="ViewModels\Users\ApplicationUserIndexViewModel.cs" />
     <Compile Include="ViewModels\Roles\RoleViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Views\UsersAdmin\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />

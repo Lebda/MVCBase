@@ -16,33 +16,20 @@ namespace IdenityHelp.Controllers
     /// <summary>
     /// HttpContext.GetOwinContext() is null till ctor si done !
     /// </summary>
-    public class RolesAdminControllerBase<TroleManager, Trole, TuserManager, Tuser, TviewModel> : Controller
+    public class UsersAdminControllerBase<TroleManager, Trole, TuserManager, Tuser> : Controller
         where Tuser : IdentityUser
         where Trole : IdentityRole
         where TroleManager : RoleManager<Trole>
         where TuserManager : UserManager<Tuser>
-        where TviewModel : class
     {
-        protected delegate void UpdateModelDelegate(TviewModel viewModel, Trole model);
-        protected delegate void UpdateViewModelDelegate(Trole model, TviewModel viewModel);
-
-        protected RolesAdminControllerBase(TuserManager userManager, TroleManager roleManager,
-            Func<TviewModel> viewModelCreator, Func<Trole> modelCreator, UpdateModelDelegate modelUpdate, UpdateViewModelDelegate viewModelUpdate)
+        protected UsersAdminControllerBase(TuserManager userManager, TroleManager roleManager)
             : base()
         {
             m_userManager = userManager;
             m_roleManager = roleManager;
-            m_viewModelCreator = viewModelCreator;
-            m_modelCreator = modelCreator;
-            m_updateModel = modelUpdate;
-            m_updateViewModel = viewModelUpdate;
         }
-        protected RolesAdminControllerBase(Func<TviewModel> viewModelCreator, Func<Trole> modelCreator, UpdateModelDelegate modelUpdate, UpdateViewModelDelegate viewModelUpdate)
+        protected UsersAdminControllerBase()
         {
-            m_viewModelCreator = viewModelCreator;
-            m_modelCreator = modelCreator;
-            m_updateModel = modelUpdate;
-            m_updateViewModel = viewModelUpdate;
         }
         
         #region PRIVATE
@@ -59,10 +46,6 @@ namespace IdenityHelp.Controllers
         #region MEMBERS
         private TuserManager m_userManager;
         private TroleManager m_roleManager;
-        private readonly Func<TviewModel> m_viewModelCreator;
-        private readonly Func<Trole> m_modelCreator;
-        private readonly UpdateModelDelegate m_updateModel;
-        private readonly UpdateViewModelDelegate m_updateViewModel;
         #endregion
         
         #region OwinContext
@@ -91,27 +74,21 @@ namespace IdenityHelp.Controllers
             private set { m_roleManager = value; }
         }
         #endregion
-      
+        
         #region INDEX
         /// <summary>
         /// “The LINQ expression node type 'Invoke' is not supported in LINQ to Entities” - stumped!
         /// http://stackoverflow.com/questions/5284912/the-linq-expression-node-type-invoke-is-not-supported-in-linq-to-entities
         /// </summary>
         /// <param name="viewModelCreator">conventer to view model</param>
-        /// <returns></returns>
-        protected ActionResult IndexBase()
+        /// <returns>@model IEnumerable<Tuser></returns>
+        protected async Task<ActionResult> IndexBase()
         {
-            var query = RoleManagerBase.Roles.ToList()
-                .Select((role) =>
-                    {
-                        var viewModel = m_viewModelCreator();
-                        m_updateViewModel(role, viewModel);
-                        return viewModel;
-                    });
+            var query = await UserManagerBase.Users.ToListAsync();
             return View(query);
         }
         #endregion
-
+        
         #region DETAILS
         // GET: ControllerName/Details/5
         protected async Task<ActionResult> DetailsBase(string id)
@@ -120,73 +97,89 @@ namespace IdenityHelp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var role = await RoleManagerBase.FindByIdAsync(id);
-            // Get the list of Users in this Role
-            var users = new List<Tuser>();
-
-            // Get the list of Users in this Role
-            foreach (var user in UserManagerBase.Users.ToList())
+            var user = await UserManagerBase.FindByIdAsync(id);
+            if (user == null)
             {
-                if (await UserManagerBase.IsInRoleAsync(user.Id, role.Name))
-                {
-                    users.Add(user);
-                }
+                return HttpNotFound();
             }
-
-            ViewBag.Users = users;
-            ViewBag.UserCount = users.Count();
-            var viewModel = m_viewModelCreator();
-            m_updateViewModel(role, viewModel);
-            return View(viewModel);
+            ViewBag.RoleNames = await UserManagerBase.GetRolesAsync(user.Id);
+            
+            return View(user);
         }
         #endregion
         
         #region EDIT CRUD
         // GET: /Roles/Edit/Admin
-        protected async Task<ActionResult> EditBase(string id)
+        protected async Task<ActionResult> EditBase<TviewModel>(string id, Func<Tuser, IList<string>, TviewModel> createAndUpdateViewModel)
+            where TviewModel : class
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var role = await RoleManagerBase.FindByIdAsync(id);
-            if (role == null)
+            var user = await UserManagerBase.FindByIdAsync(id);
+            if (user == null)
             {
                 return HttpNotFound();
             }
-            var viewModel = m_viewModelCreator();
-            if (m_updateViewModel != null)
-            {
-                m_updateViewModel(role, viewModel);   
-            }
-            return View(viewModel);
+            
+            var userRoles = await UserManagerBase.GetRolesAsync(user.Id);
+            
+            return View(createAndUpdateViewModel(user, userRoles));
         }
         // POST: ControllerName/Edit/5
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        protected async Task<ActionResult> EditPostBase(string id, Func<RedirectToRouteResult> redirection = null, params string[] properties2Update)
+        protected async Task<ActionResult> EditPostBase<TviewModel>(
+            string id,
+            Action<TviewModel, Tuser> updateModel,
+            Func<TviewModel> viewModelCreator,
+            string[] selectedRole,
+            Func<RedirectToRouteResult> redirection = null,
+            params string[] properties2Update)
+            where TviewModel : class
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var role = await RoleManagerBase.FindByIdAsync(id);
-            if (role == null)
+            var user = await UserManagerBase.FindByIdAsync(id);
+            if (user == null)
             {
                 return HttpNotFound();
             }
-            var viewModel = m_viewModelCreator();
+            var viewModel = viewModelCreator();
             if (TryUpdateModel(viewModel, "", properties2Update))
             {
                 try
                 {
-                    if (m_updateModel != null)
+                    if (updateModel != null)
                     {
-                        m_updateModel(viewModel, role);
+                        updateModel(viewModel, user);
                     }
-                    await RoleManagerBase.UpdateAsync(role);
+                    //await UserManagerBase.UpdateAsync(user); // shloud it be called ?
+                    
+                    var userRoles = await UserManagerBase.GetRolesAsync(user.Id);
+                    
+                    selectedRole = selectedRole ?? new string[] { };
+                    
+                    var result = await UserManagerBase.AddToRolesAsync(user.Id, selectedRole.Except(userRoles).ToArray<string>());
+                    
+                    if (!result.Succeeded)
+                    {
+                        ModelState.AddModelError("", result.Errors.First());
+                        return View(viewModel);
+                    }
+                    result = await UserManagerBase.RemoveFromRolesAsync(user.Id, userRoles.Except(selectedRole).ToArray<string>());
+                    
+                    if (!result.Succeeded)
+                    {
+                        ModelState.AddModelError("", result.Errors.First());
+                        return View(viewModel);
+                    }
+                    
                     return RedirectionInternal(redirection);
                 }
                 catch (DataException /* dex */)
@@ -195,41 +188,65 @@ namespace IdenityHelp.Controllers
                     ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
                 }
             }
+            ModelState.AddModelError("", "Something failed.");
             return View(viewModel);
         }
         #endregion
-
+        
         #region CREATE CRUD
         // GET: ControllerName/Create
-        protected ActionResult CreateBase()
+        protected async Task<ActionResult> CreateBase()
         {
+            //Get the list of Roles
+            ViewBag.RoleId = new SelectList(await RoleManagerBase.Roles.ToListAsync(), "Name", "Name");
             return View();
         }
-
         // POST: ControllerName/Create
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        protected async Task<ActionResult> CreateBase(TviewModel viewModel, Func<RedirectToRouteResult> redirection = null)
+        protected async Task<ActionResult> CreateBase<TviewModel>(
+            TviewModel viewModel, 
+            string password,
+            Func<TviewModel, Tuser> updateAndCreateModel, 
+            string[] selectedRoles, 
+            Func<RedirectToRouteResult> redirection = null)
+            where TviewModel : class
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    var model = m_modelCreator();
-                    if (m_updateModel != null)
+
+                    var user = updateAndCreateModel(viewModel);
+
+                    var adminresult = await UserManagerBase.CreateAsync(user, password);
+                    
+                    //Add User to the selected Roles 
+                    if (adminresult.Succeeded)
                     {
-                        m_updateModel(viewModel, model);   
+                        if (selectedRoles != null)
+                        {
+                            var result = await UserManagerBase.AddToRolesAsync(user.Id, selectedRoles);
+                            if (!result.Succeeded)
+                            {
+                                ModelState.AddModelError("", result.Errors.First());
+                                ViewBag.RoleId = new SelectList(await RoleManagerBase.Roles.ToListAsync(), "Name", "Name");
+                                return View();
+                            }
+                        }
                     }
-                    var roleresult = await RoleManagerBase.CreateAsync(model);
-                    if (!roleresult.Succeeded)
+                    else
                     {
-                        ModelState.AddModelError("", roleresult.Errors.First());
-                        return View(viewModel);
+                        ModelState.AddModelError("", adminresult.Errors.First());
+                        ViewBag.RoleId = new SelectList(RoleManagerBase.Roles, "Name", "Name");
+                        return View();
                     }
-                    return RedirectionInternal(redirection);
+                    return RedirectToAction("Index");
                 }
+                ViewBag.RoleId = new SelectList(RoleManagerBase.Roles, "Name", "Name");
+                return RedirectionInternal(redirection);
             }
             catch (DataException)
             {
@@ -240,7 +257,7 @@ namespace IdenityHelp.Controllers
             return View(viewModel);
         }
         #endregion
-
+        
         #region DELETE CRUD
         // GET: ControllerName/Delete/5
         protected async Task<ActionResult> DeleteBase(string id)
@@ -249,17 +266,12 @@ namespace IdenityHelp.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            var role = await RoleManagerBase.FindByIdAsync(id);
-            if (role == null)
+            var user = await UserManagerBase.FindByIdAsync(id);
+            if (user == null)
             {
                 return HttpNotFound();
             }
-            var viewModel = m_viewModelCreator();
-            if (m_updateViewModel != null)
-            {
-                m_updateViewModel(role, viewModel);
-            }
-            return View(viewModel);
+            return View(user);
         }
         // POST: ControllerName/Delete/5
         [HttpPost]
@@ -272,12 +284,12 @@ namespace IdenityHelp.Controllers
                 {
                     return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
                 }
-                var role = await RoleManagerBase.FindByIdAsync(id);
-                if (role == null)
+                var user = await UserManagerBase.FindByIdAsync(id);
+                if (user == null)
                 {
                     return HttpNotFound();
                 }
-                IdentityResult result = await RoleManagerBase.DeleteAsync(role);
+                IdentityResult result = await UserManagerBase.DeleteAsync(user);
                 if (!result.Succeeded)
                 {
                     ModelState.AddModelError("", result.Errors.First());
