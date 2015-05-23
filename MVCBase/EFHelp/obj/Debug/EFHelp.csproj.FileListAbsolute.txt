@@ -17,3 +17,4 @@ C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.Razor.xml
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.xml
 C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\bin\Debug\System.Web.WebPages.Deployment.xml
+C:\Users\jlebduska\Documents\Visual Studio 2013\Projects\MVCBase\MVCBase\EFHelp\obj\Debug\EFHelp.csprojResolveAssemblyReference.cache
