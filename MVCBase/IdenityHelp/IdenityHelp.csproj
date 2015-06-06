@@ -86,6 +86,7 @@
   <ItemGroup>
     <Compile Include="Controllers\RolesAdminControllerBase.cs" />
     <Compile Include="Controllers\UsersAdminControllerBase.cs" />
+    <Compile Include="Infrastrucutre\RoleNames.cs" />
     <Compile Include="ViewModels\Users\ApplicationUserIndexViewModel.cs" />
     <Compile Include="ViewModels\Roles\RoleViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

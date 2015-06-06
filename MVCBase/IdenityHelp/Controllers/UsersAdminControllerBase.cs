@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using IdenityHelp.Infrastrucutre;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -40,6 +41,33 @@ namespace IdenityHelp.Controllers
                 return RedirectToAction("Index");
             }
             return redirection();
+        }
+        void RemoveArchitectRole(IList<string> roleNames)
+        {
+            roleNames.ToList().RemoveAll(item => item == RoleNames.c_architectRoleName);
+        }
+        #endregion
+        
+        #region ROLES FUNCTIONS
+        protected IList<Trole> GetRoles4Aplication()
+        {
+            var roles = RoleManagerBase.Roles.ToList();
+            roles.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);               
+            return roles;
+        }
+        protected IList<string> GetRoles4User(string id)
+        {
+            if (id == null)
+            {
+                return null;
+            }
+            var user = UserManagerBase.FindById(id);
+            if (user == null)
+            {
+                return null;
+            }
+            var userRoles = UserManagerBase.GetRoles(user.Id);
+            return userRoles;
         }
         #endregion
         
@@ -82,9 +110,15 @@ namespace IdenityHelp.Controllers
         /// </summary>
         /// <param name="viewModelCreator">conventer to view model</param>
         /// <returns>@model IEnumerable<Tuser></returns>
-        protected async Task<ActionResult> IndexBase()
+        protected async Task<ActionResult> IndexBase<TviewModel>(Func<Tuser, IList<string>, TviewModel> createAndUpdateViewModel)
         {
-            var query = await UserManagerBase.Users.ToListAsync();
+            var queryUser = await UserManagerBase.Users.ToListAsync();
+            var query =
+                queryUser.Select((item) =>
+                {
+                    var viewModel = createAndUpdateViewModel(item, GetRoles4User(item.Id));
+                    return viewModel;
+                });
             return View(query);
         }
         #endregion
@@ -124,6 +158,7 @@ namespace IdenityHelp.Controllers
             }
             
             var userRoles = await UserManagerBase.GetRolesAsync(user.Id);
+            RemoveArchitectRole(userRoles);
             
             return View(createAndUpdateViewModel(user, userRoles));
         }
@@ -164,6 +199,8 @@ namespace IdenityHelp.Controllers
                     var userRoles = await UserManagerBase.GetRolesAsync(user.Id);
                     
                     selectedRole = selectedRole ?? new string[] { };
+                    
+                    RemoveArchitectRole(selectedRole);
                     
                     var result = await UserManagerBase.AddToRolesAsync(user.Id, selectedRole.Except(userRoles).ToArray<string>());
                     
@@ -207,10 +244,10 @@ namespace IdenityHelp.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         protected async Task<ActionResult> CreateBase<TviewModel>(
-            TviewModel viewModel, 
+            TviewModel viewModel,
             string password,
-            Func<TviewModel, Tuser> updateAndCreateModel, 
-            string[] selectedRoles, 
+            Func<TviewModel, Tuser> updateAndCreateModel,
+            string[] selectedRoles,
             Func<RedirectToRouteResult> redirection = null)
             where TviewModel : class
         {
@@ -218,9 +255,8 @@ namespace IdenityHelp.Controllers
             {
                 if (ModelState.IsValid)
                 {
-
                     var user = updateAndCreateModel(viewModel);
-
+                    
                     var adminresult = await UserManagerBase.CreateAsync(user, password);
                     
                     //Add User to the selected Roles 
