@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Entity;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using IdenityHelp.Infrastructure;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -25,7 +25,6 @@ namespace IdenityHelp.Controllers
     {
         protected delegate void UpdateModelDelegate(TviewModel viewModel, Trole model);
         protected delegate void UpdateViewModelDelegate(Trole model, TviewModel viewModel);
-
         protected RolesAdminControllerBase(TuserManager userManager, TroleManager roleManager,
             Func<TviewModel> viewModelCreator, Func<Trole> modelCreator, UpdateModelDelegate modelUpdate, UpdateViewModelDelegate viewModelUpdate)
             : base()
@@ -91,7 +90,7 @@ namespace IdenityHelp.Controllers
             private set { m_roleManager = value; }
         }
         #endregion
-      
+        
         #region INDEX
         /// <summary>
         /// “The LINQ expression node type 'Invoke' is not supported in LINQ to Entities” - stumped!
@@ -101,17 +100,18 @@ namespace IdenityHelp.Controllers
         /// <returns></returns>
         protected ActionResult IndexBase()
         {
-            var query = RoleManagerBase.Roles.ToList()
-                .Select((role) =>
-                    {
-                        var viewModel = m_viewModelCreator();
-                        m_updateViewModel(role, viewModel);
-                        return viewModel;
-                    });
+            var query = RoleManagerBase.Roles
+                                       .ToList()
+                                       .Select((role) =>
+                                       {
+                                           var viewModel = m_viewModelCreator();
+                                           m_updateViewModel(role, viewModel);
+                                           return viewModel;
+                                       });
             return View(query);
         }
         #endregion
-
+        
         #region DETAILS
         // GET: ControllerName/Details/5
         protected async Task<ActionResult> DetailsBase(string id)
@@ -123,7 +123,7 @@ namespace IdenityHelp.Controllers
             var role = await RoleManagerBase.FindByIdAsync(id);
             // Get the list of Users in this Role
             var users = new List<Tuser>();
-
+            
             // Get the list of Users in this Role
             foreach (var user in UserManagerBase.Users.ToList())
             {
@@ -132,7 +132,7 @@ namespace IdenityHelp.Controllers
                     users.Add(user);
                 }
             }
-
+            
             ViewBag.Users = users;
             ViewBag.UserCount = users.Count();
             var viewModel = m_viewModelCreator();
@@ -143,7 +143,7 @@ namespace IdenityHelp.Controllers
         
         #region EDIT CRUD
         // GET: /Roles/Edit/Admin
-        protected async Task<ActionResult> EditBase(string id)
+        protected async Task<ActionResult> EditBase(string id, Func<string, ViewResult> invalidRoleModificationView)
         {
             if (id == null)
             {
@@ -154,19 +154,23 @@ namespace IdenityHelp.Controllers
             {
                 return HttpNotFound();
             }
-            var viewModel = m_viewModelCreator();
-            if (m_updateViewModel != null)
+            if (RoleNames.IsEditableRole(role.Name) || User.IsInRole(RoleNames.c_architectRoleName))
             {
-                m_updateViewModel(role, viewModel);   
+                var viewModel = m_viewModelCreator();
+                if (m_updateViewModel != null)
+                {
+                    m_updateViewModel(role, viewModel);
+                }
+                return View(viewModel);
             }
-            return View(viewModel);
+            return invalidRoleModificationView(String.Format("Only user in architect role can modificate {0} !", role.Name));
         }
         // POST: ControllerName/Edit/5
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        protected async Task<ActionResult> EditPostBase(string id, Func<RedirectToRouteResult> redirection = null, params string[] properties2Update)
+        protected async Task<ActionResult> EditPostBase(string id, Func<string, ViewResult> invalidRoleModificationView, Func<RedirectToRouteResult> redirection = null, params string[] properties2Update)
         {
             if (id == null)
             {
@@ -177,35 +181,38 @@ namespace IdenityHelp.Controllers
             {
                 return HttpNotFound();
             }
-            var viewModel = m_viewModelCreator();
-            if (TryUpdateModel(viewModel, "", properties2Update))
+            if (RoleNames.IsEditableRole(role.Name) || User.IsInRole(RoleNames.c_architectRoleName))
             {
-                try
+                var viewModel = m_viewModelCreator();
+                if (TryUpdateModel(viewModel, "", properties2Update))
                 {
-                    if (m_updateModel != null)
+                    try
                     {
-                        m_updateModel(viewModel, role);
+                        if (m_updateModel != null)
+                        {
+                            m_updateModel(viewModel, role);
+                        }
+                        await RoleManagerBase.UpdateAsync(role);
+                        return RedirectionInternal(redirection);
                     }
-                    await RoleManagerBase.UpdateAsync(role);
-                    return RedirectionInternal(redirection);
+                    catch (DataException /* dex */)
+                    {
+                        //Log the error (uncomment dex variable name and add a line here to write a log.
+                        ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
+                    }
                 }
-                catch (DataException /* dex */)
-                {
-                    //Log the error (uncomment dex variable name and add a line here to write a log.
-                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
-                }
+                return View(viewModel);
             }
-            return View(viewModel);
+            return invalidRoleModificationView("Only user in architect role can modificate architect role !");
         }
         #endregion
-
+        
         #region CREATE CRUD
         // GET: ControllerName/Create
         protected ActionResult CreateBase()
         {
             return View();
         }
-
         // POST: ControllerName/Create
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -240,10 +247,10 @@ namespace IdenityHelp.Controllers
             return View(viewModel);
         }
         #endregion
-
+        
         #region DELETE CRUD
         // GET: ControllerName/Delete/5
-        protected async Task<ActionResult> DeleteBase(string id)
+        protected async Task<ActionResult> DeleteBase(string id, Func<string, ViewResult> invalidRoleModificationView)
         {
             if (id == null)
             {
@@ -254,17 +261,24 @@ namespace IdenityHelp.Controllers
             {
                 return HttpNotFound();
             }
-            var viewModel = m_viewModelCreator();
-            if (m_updateViewModel != null)
+            if (RoleNames.IsEditableRole(role.Name) || User.IsInRole(RoleNames.c_architectRoleName))
             {
-                m_updateViewModel(role, viewModel);
+                var viewModel = m_viewModelCreator();
+                if (m_updateViewModel != null)
+                {
+                    m_updateViewModel(role, viewModel);
+                }
+                return View(viewModel);
             }
-            return View(viewModel);
+            return invalidRoleModificationView(String.Format("Only user in architect role can modificate {0} !", role.Name));
         }
         // POST: ControllerName/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmedBase(string id, Func<RedirectToRouteResult> redirection = null)
+        public async Task<ActionResult> DeleteConfirmedBase(
+            string id,
+            Func<string, ViewResult> invalidRoleModificationView,
+            Func<RedirectToRouteResult> redirection = null)
         {
             if (ModelState.IsValid)
             {
@@ -277,13 +291,17 @@ namespace IdenityHelp.Controllers
                 {
                     return HttpNotFound();
                 }
-                IdentityResult result = await RoleManagerBase.DeleteAsync(role);
-                if (!result.Succeeded)
+                if (RoleNames.IsEditableRole(role.Name) || User.IsInRole(RoleNames.c_architectRoleName))
                 {
-                    ModelState.AddModelError("", result.Errors.First());
-                    return View();
+                    IdentityResult result = await RoleManagerBase.DeleteAsync(role);
+                    if (!result.Succeeded)
+                    {
+                        ModelState.AddModelError("", result.Errors.First());
+                        return View();
+                    }
+                    return RedirectionInternal(redirection);
                 }
-                return RedirectionInternal(redirection);
+                return invalidRoleModificationView(String.Format("Only user in architect role can modificate {0} !", role.Name));
             }
             return View();
         }

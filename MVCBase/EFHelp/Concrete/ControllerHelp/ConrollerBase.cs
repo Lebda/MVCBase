@@ -42,14 +42,6 @@ namespace EFHelp.Concrete.ControllerHelp
             }
             return redirection();
         }
-        void SafeCall(Action job)
-        {
-            if (job == null)
-            {
-                return;
-            }
-            job();
-        }
         void SafeCall(Action<T> job, T item)
         {
             if (job == null || item == null)

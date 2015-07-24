@@ -1,0 +1,24 @@
+﻿@using System.Web.Mvc.Html;
+
+@model IdenityHelp.ViewModels.Shared.CrudActionLinksEasyViewModel
+
+@if (Model.CanUserSeeEdit())
+{
+    @Html.ActionLink("Edit", "Edit", @Model.ControllerName, @Model.ModelBind, null) 
+}
+@if (Model.ShowEditDetailsDivider())
+{
+    @Html.Encode(" | ")
+}
+@if (Model.CanUserSeeDetail())
+{
+    @Html.ActionLink("Details", "Details", @Model.ControllerName, @Model.ModelBind, null)
+}
+@if (Model.ShowDetailsDeleteDivider())
+{
+    @Html.Encode(" | ")
+}
+@if (Model.CanUserSeeDelete())
+{
+    @Html.ActionLink("Delete", "Delete", @Model.ControllerName, @Model.ModelBind, null)
+}

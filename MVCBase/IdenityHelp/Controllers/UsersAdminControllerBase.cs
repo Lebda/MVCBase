@@ -7,7 +7,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using IdenityHelp.Infrastrucutre;
+using IdenityHelp.Infrastructure;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -42,9 +42,11 @@ namespace IdenityHelp.Controllers
             }
             return redirection();
         }
-        void RemoveArchitectRole(IList<string> roleNames)
+        IList<string> RemoveArchitectRole(IEnumerable<string> roleNames)
         {
-            roleNames.ToList().RemoveAll(item => item == RoleNames.c_architectRoleName);
+            List<string> retVal = roleNames.ToList();
+            retVal.RemoveAll(item => item == RoleNames.c_architectRoleName);
+            return retVal;
         }
         #endregion
         
@@ -52,10 +54,10 @@ namespace IdenityHelp.Controllers
         protected IList<Trole> GetRoles4Aplication()
         {
             var roles = RoleManagerBase.Roles.ToList();
-            roles.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);               
+            roles.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);           
             return roles;
         }
-        protected IList<string> GetRoles4User(string id)
+        private IList<string> GetRoles4User(string id, bool removeArchitect = false)
         {
             if (id == null)
             {
@@ -67,6 +69,10 @@ namespace IdenityHelp.Controllers
                 return null;
             }
             var userRoles = UserManagerBase.GetRoles(user.Id);
+            if (removeArchitect)
+            {
+                userRoles = RemoveArchitectRole(userRoles);
+            }
             return userRoles;
         }
         #endregion
@@ -74,6 +80,7 @@ namespace IdenityHelp.Controllers
         #region MEMBERS
         private TuserManager m_userManager;
         private TroleManager m_roleManager;
+        protected bool m_allowArchitectAssing;
         #endregion
         
         #region OwinContext
@@ -144,7 +151,10 @@ namespace IdenityHelp.Controllers
         
         #region EDIT CRUD
         // GET: /Roles/Edit/Admin
-        protected async Task<ActionResult> EditBase<TviewModel>(string id, Func<Tuser, IList<string>, TviewModel> createAndUpdateViewModel)
+        protected async Task<ActionResult> EditBase<TviewModel>(
+            string id,
+            Func<string, ViewResult> invalidModificationView,
+            Func<Tuser, IList<string>, TviewModel> createAndUpdateViewModel)
             where TviewModel : class
         {
             if (id == null)
@@ -156,10 +166,13 @@ namespace IdenityHelp.Controllers
             {
                 return HttpNotFound();
             }
-            
-            var userRoles = await UserManagerBase.GetRolesAsync(user.Id);
-            RemoveArchitectRole(userRoles);
-            
+            var userRoles = GetRoles4User(user.Id, false);
+            // test if is modificated architect and user is not architect
+            if (userRoles.Contains(RoleNames.c_architectRoleName) && !User.IsInRole(RoleNames.c_architectRoleName))
+            {
+                return invalidModificationView(String.Format("User {0} is in {1} role !", user.UserName, RoleNames.c_architectRoleName));
+            }
+            userRoles = RemoveArchitectRole(userRoles);
             return View(createAndUpdateViewModel(user, userRoles));
         }
         // POST: ControllerName/Edit/5
@@ -169,6 +182,7 @@ namespace IdenityHelp.Controllers
         [ValidateAntiForgeryToken]
         protected async Task<ActionResult> EditPostBase<TviewModel>(
             string id,
+            Func<string, ViewResult> invalidModificationView,
             Action<TviewModel, Tuser> updateModel,
             Func<TviewModel> viewModelCreator,
             string[] selectedRole,
@@ -185,6 +199,7 @@ namespace IdenityHelp.Controllers
             {
                 return HttpNotFound();
             }
+            
             var viewModel = viewModelCreator();
             if (TryUpdateModel(viewModel, "", properties2Update))
             {
@@ -197,10 +212,25 @@ namespace IdenityHelp.Controllers
                     //await UserManagerBase.UpdateAsync(user); // shloud it be called ?
                     
                     var userRoles = await UserManagerBase.GetRolesAsync(user.Id);
-                    
+                    // test if is modificated architect and user is not architect
+                    if (userRoles.Contains(RoleNames.c_architectRoleName) && !User.IsInRole(RoleNames.c_architectRoleName))
+                    {
+                        return invalidModificationView(String.Format("User {0} is in {1} role !", user.UserName, RoleNames.c_architectRoleName));
+                    }
+
                     selectedRole = selectedRole ?? new string[] { };
                     
-                    RemoveArchitectRole(selectedRole);
+                    selectedRole = RemoveArchitectRole(selectedRole).ToArray();
+
+                    if (userRoles.Contains(RoleNames.c_adminRoleName) && !selectedRole.Contains(RoleNames.c_adminRoleName) && !(await CanBeAdminRoleCleared()))
+                    {
+                        string messasge = String.Format("User {0} is in {1} role ! ", user.UserName, RoleNames.c_adminRoleName);
+                        //messasge = Environment.NewLine;
+                        messasge += String.Format("There is no other user in {0} role ! ", RoleNames.c_adminRoleName);
+                       // messasge = Environment.NewLine;
+                        messasge += String.Format("Allways has to be one user in {0} role ! ", RoleNames.c_adminRoleName);
+                        return invalidModificationView(messasge);
+                    }
                     
                     var result = await UserManagerBase.AddToRolesAsync(user.Id, selectedRole.Except(userRoles).ToArray<string>());
                     
@@ -209,7 +239,14 @@ namespace IdenityHelp.Controllers
                         ModelState.AddModelError("", result.Errors.First());
                         return View(viewModel);
                     }
-                    result = await UserManagerBase.RemoveFromRolesAsync(user.Id, userRoles.Except(selectedRole).ToArray<string>());
+                    
+                    var query4Remove = userRoles.Except(selectedRole).ToList();
+                    if (User.IsInRole(RoleNames.c_architectRoleName))
+                    {
+                        query4Remove = RemoveArchitectRole(query4Remove).ToList();
+                    }
+                    
+                    result = await UserManagerBase.RemoveFromRolesAsync(user.Id, query4Remove.ToArray<string>());
                     
                     if (!result.Succeeded)
                     {
@@ -235,7 +272,9 @@ namespace IdenityHelp.Controllers
         protected async Task<ActionResult> CreateBase()
         {
             //Get the list of Roles
-            ViewBag.RoleId = new SelectList(await RoleManagerBase.Roles.ToListAsync(), "Name", "Name");
+            var availableRoles = await RoleManagerBase.Roles.ToListAsync();
+            availableRoles.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);
+            ViewBag.RoleId = new SelectList(availableRoles, "Name", "Name");
             return View();
         }
         // POST: ControllerName/Create
@@ -264,11 +303,14 @@ namespace IdenityHelp.Controllers
                     {
                         if (selectedRoles != null)
                         {
+                            selectedRoles = RemoveArchitectRole(selectedRoles).ToArray();
                             var result = await UserManagerBase.AddToRolesAsync(user.Id, selectedRoles);
                             if (!result.Succeeded)
                             {
                                 ModelState.AddModelError("", result.Errors.First());
-                                ViewBag.RoleId = new SelectList(await RoleManagerBase.Roles.ToListAsync(), "Name", "Name");
+                                var availableRoles = await RoleManagerBase.Roles.ToListAsync();
+                                availableRoles.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);
+                                ViewBag.RoleId = new SelectList(availableRoles, "Name", "Name");
                                 return View();
                             }
                         }
@@ -276,12 +318,16 @@ namespace IdenityHelp.Controllers
                     else
                     {
                         ModelState.AddModelError("", adminresult.Errors.First());
-                        ViewBag.RoleId = new SelectList(RoleManagerBase.Roles, "Name", "Name");
+                        var availableRoles = await RoleManagerBase.Roles.ToListAsync();
+                        availableRoles.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);
+                        ViewBag.RoleId = new SelectList(availableRoles, "Name", "Name");
                         return View();
                     }
                     return RedirectToAction("Index");
                 }
-                ViewBag.RoleId = new SelectList(RoleManagerBase.Roles, "Name", "Name");
+                var availableRolesLast = RoleManagerBase.Roles.ToList();
+                availableRolesLast.RemoveAll(item => item.Name == RoleNames.c_architectRoleName);
+                ViewBag.RoleId = new SelectList(availableRolesLast, "Name", "Name");
                 return RedirectionInternal(redirection);
             }
             catch (DataException)
@@ -296,7 +342,9 @@ namespace IdenityHelp.Controllers
         
         #region DELETE CRUD
         // GET: ControllerName/Delete/5
-        protected async Task<ActionResult> DeleteBase(string id)
+        protected async Task<ActionResult> DeleteBase(
+            string id,
+            Func<string, ViewResult> invalidModificationView)
         {
             if (id == null)
             {
@@ -307,12 +355,21 @@ namespace IdenityHelp.Controllers
             {
                 return HttpNotFound();
             }
+            var userRoles = GetRoles4User(user.Id, false);
+            // test if is modificated architect and user is not architect
+            if (userRoles.Contains(RoleNames.c_architectRoleName) && !User.IsInRole(RoleNames.c_architectRoleName))
+            {
+                return invalidModificationView(String.Format("User {0} is in {1} role !", user.UserName, RoleNames.c_architectRoleName));
+            }
             return View(user);
         }
         // POST: ControllerName/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmedBase(string id, Func<RedirectToRouteResult> redirection = null)
+        public async Task<ActionResult> DeleteConfirmedBase(
+            string id,
+            Func<string, ViewResult> invalidModificationView,
+            Func<RedirectToRouteResult> redirection = null)
         {
             if (ModelState.IsValid)
             {
@@ -325,6 +382,12 @@ namespace IdenityHelp.Controllers
                 {
                     return HttpNotFound();
                 }
+                var userRoles = GetRoles4User(user.Id, false);
+                // test if is modificated architect and user is not architect
+                if (userRoles.Contains(RoleNames.c_architectRoleName) && !User.IsInRole(RoleNames.c_architectRoleName))
+                {
+                    return invalidModificationView(String.Format("User {0} is in {1} role !", user.UserName, RoleNames.c_architectRoleName));
+                }
                 IdentityResult result = await UserManagerBase.DeleteAsync(user);
                 if (!result.Succeeded)
                 {
@@ -336,5 +399,28 @@ namespace IdenityHelp.Controllers
             return View();
         }
         #endregion
+
+        #region METHODS
+        async Task<bool> CanBeAdminRoleCleared()
+        {
+            int adminRoleCount = 0;
+            var queryUser = await UserManagerBase.Users.ToListAsync();
+            foreach (var user in queryUser)
+            {
+                var userRoles = GetRoles4User(user.Id, false);
+                if (userRoles.Contains(RoleNames.c_architectRoleName))
+                {
+                    continue;
+                }
+                if (userRoles.Contains(RoleNames.c_adminRoleName))
+                {
+                    adminRoleCount++;
+                }
+            }
+            bool canBeCleared = adminRoleCount > 1;
+            return canBeCleared;
+        }
+        #endregion
+
     }
 }

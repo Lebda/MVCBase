@@ -1,0 +1,13 @@
+﻿@using System.Web.Mvc.Html;
+
+@model IdenityHelp.ViewModels.Shared.IEditBackActionLinkEasyBase
+
+@if (Model.CanUserSeeEdit())
+{
+    @Html.ActionLink("Edit", "Edit", @Model.ControllerName, @Model.ModelBind, null) 
+}
+@if (Model.ShowEditBackDivider())
+{
+    @Html.Encode(" | ")
+}
+@Html.ActionLink("Back", "Index", @Model.ControllerName4Back, @Model.ModelBind4Back, null)

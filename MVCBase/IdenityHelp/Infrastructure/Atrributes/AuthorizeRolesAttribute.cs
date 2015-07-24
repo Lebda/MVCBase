@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Web.Mvc;
 
-namespace MVCHelp.Concrete
+namespace IdenityHelp.Infrastructure.Atrributes
 {
     public class AuthorizeRolesAttribute : AuthorizeAttribute
     {

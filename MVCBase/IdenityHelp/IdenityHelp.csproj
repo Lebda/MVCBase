@@ -62,8 +62,9 @@
     <Reference Include="Microsoft.Owin.Security.OAuth">
       <HintPath>..\..\..\SciaSquash\SciaSquash\packages\Microsoft.Owin.Security.OAuth.2.1.0\lib\net45\Microsoft.Owin.Security.OAuth.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\..\SciaSquash\SciaSquash\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\SciaSquash\SciaSquash\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Owin, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -86,10 +87,31 @@
   <ItemGroup>
     <Compile Include="Controllers\RolesAdminControllerBase.cs" />
     <Compile Include="Controllers\UsersAdminControllerBase.cs" />
-    <Compile Include="Infrastrucutre\RoleNames.cs" />
+    <Compile Include="Infrastructure\Atrributes\AuthorizeRoles4CreateAttribute.cs" />
+    <Compile Include="Infrastructure\Atrributes\AuthorizeRoles4DeleteAttribute.cs" />
+    <Compile Include="Infrastructure\Atrributes\AuthorizeRoles4EditAttribute.cs" />
+    <Compile Include="Infrastructure\Atrributes\AuthorizeRolesAttribute.cs" />
+    <Compile Include="Infrastructure\RoleNames.cs" />
+    <Compile Include="Infrastructure\RoleNamesHolder.cs" />
+    <Compile Include="ViewModels\Shared\CreateActionLinkBase.cs" />
+    <Compile Include="ViewModels\Shared\CreateActionLinkEasyViewModel.cs" />
+    <Compile Include="ViewModels\Roles\CreateRoleActionLinkViewModel.cs" />
+    <Compile Include="ViewModels\Shared\CrudActionLinksBase.cs" />
+    <Compile Include="ViewModels\Shared\CrudActionLinksEasyViewModel.cs" />
+    <Compile Include="ViewModels\Shared\EditBackActionLinkEasyBase.cs" />
+    <Compile Include="ViewModels\Shared\EditBackActionLinksEasyViewModel.cs" />
+    <Compile Include="ViewModels\Shared\ICreateActionLinkBase.cs" />
+    <Compile Include="ViewModels\Shared\IEditBackActionLinkEasyBase.cs" />
+    <Compile Include="ViewModels\Roles\InvalidRoleModificationViewModel.cs" />
+    <Compile Include="ViewModels\Roles\RoleEditBackActionLinkEasyViewModel.cs" />
+    <Compile Include="ViewModels\Roles\RolesCrudActionLinksEasyViewModel.cs" />
     <Compile Include="ViewModels\Users\ApplicationUserIndexViewModel.cs" />
     <Compile Include="ViewModels\Roles\RoleViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewModels\Users\CreateUserActionLinkViewModel.cs" />
+    <Compile Include="ViewModels\Users\InvalidUserModificationViewModel.cs" />
+    <Compile Include="ViewModels\Users\UserEditBackActionLinkEasyViewModel.cs" />
+    <Compile Include="ViewModels\Users\UsersCrudActionLinksEasyViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Views\UsersAdmin\" />
@@ -102,6 +124,10 @@
     <Content Include="Views\RolesAdmin\Details.cshtml" />
     <Content Include="Views\RolesAdmin\Create.cshtml" />
     <Content Include="Views\RolesAdmin\Delete.cshtml" />
+    <Content Include="Views\Shared\EditBackActionLinksEasyPartial.cshtml" />
+    <Content Include="Views\Shared\CrudActionLinksEasyPartial.cshtml" />
+    <Content Include="Views\Shared\CreateActionLinkEasyPartial.cshtml" />
+    <Content Include="Views\Shared\InvalidRoleModification.cshtml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

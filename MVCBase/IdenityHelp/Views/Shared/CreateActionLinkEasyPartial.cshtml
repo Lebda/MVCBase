@@ -1,0 +1,8 @@
+﻿@using System.Web.Mvc.Html;
+
+@model IdenityHelp.ViewModels.Shared.CreateActionLinkEasyViewModel
+
+@if (Model.CanUserSeeCreate())
+{
+    @Html.ActionLink(@Model.LinkText, "Create", @Model.ControllerName, @Model.ModelBind, null) 
+}
